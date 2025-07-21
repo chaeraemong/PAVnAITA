@@ -36,6 +36,8 @@ def send_to_server(args, task, image_bytes, step, role, previous_steps, app_name
     """
     b64 = base64.b64encode(image_bytes).decode("utf-8")
     payload = {"task": task, "image_base64": b64, "step": step, "role": role, "previous_steps": previous_steps, "app_name": app_name}
+    # for i, j in payload.items():
+    #     print(f"{i}: {type(j)}")
 
     r = requests.post(args.server, json=payload, timeout=60)
     r.raise_for_status()
@@ -174,6 +176,8 @@ def run_adb_action(response: dict) -> str:
 def baseline(args):
     
     previous_steps = ""
+    output_path = f"{args.image_path}/{args.task_number}"
+    all_responses = []
     
     # previous_action = ""
     for step in range(args.max_steps):
@@ -184,34 +188,94 @@ def baseline(args):
         print("Sending to server...")
         # print("previous action : ", [previous_action])
         response = send_to_server(args, args.task, image_bytes, step, role="baseline", previous_steps=previous_steps, app_name=args.app_name)
-        # response = send_to_server(args, args.task, image_bytes, step, "baseline", str(previous_action), args.app_name)
+        response_ = response['arguments']
         
         print("Model Output:", json.dumps(response, indent=2, ensure_ascii=False))
         
         action_type = run_adb_action(response)
         previous_steps += f"\nStep {step+1}: {response}; "
         # previous_action = response
+        
+        if action_type == "click" or action_type == "long_press":
+            coordinate = response_.get("coordinate", [0, 0])
+            x, y = int(coordinate[0]), int(coordinate[1])
+            result_action_text = ""
+            result_touch_yx = [y / 2424, x / 1080]
+            result_lift_yx = [y / 2424, x / 1080]
+        elif action_type == "swipe":
+            coordinate = response_.get("coordinate", [0, 0])
+            coordinate2 = response_.get("coordinate2", [0, 0])
+            coordinate = response_.get("coordinate")
+            
+            x1, y1 = int(coordinate[0]), int(coordinate[1])
+            x2, y2 = int(coordinate2[0]), int(coordinate2[1])
+            result_action_text = ""
+            result_touch_yx = [y1 / 2424, x1 / 1080]
+            result_lift_yx = [y2 / 2424, x2 / 1080]
+        elif action_type == "type":
+            text = response_.get("text")
+            result_action_text = text
+            result_touch_yx = [-1, -1]
+            result_lift_yx = [-1, -1]
+        else:
+            result_action_text = ""
+            result_touch_yx = [-1, -1]
+            result_lift_yx = [-1, -1]    
+        
+        image_path = f"{args.image_path}/{args.task_number}/screenshot_{step}.png"
+        
+        
         if action_type == "terminate" or action_type == "finished":
             print("Task complete. Exiting.")
+            all_responses.append(
+                {
+                    "episode_id": args.task_number,
+                    "episode_length": step + 1,
+                    "step_id": step,
+                    "instruction": args.task,
+                    "result_action_type": action_type,
+                    "result_action_text": "",
+                    "result_touch_yx": [-1, -1],
+                    "result_lift_yx": [-1, -1],
+                    "image_path": image_path,
+                }
+            )
             break
         
+        all_responses.append(
+            {
+                "episode_id": args.task_number,
+                "episode_length": step + 1,
+                "step_id": step,
+                "instruction": args.task,
+                "result_action_type": action_type,
+                "result_action_text": result_action_text,
+                "result_touch_yx": result_touch_yx,
+                "result_lift_yx": result_lift_yx,
+                "image_path": image_path,
+            }
+        )
         time.sleep(3)
 
     # 마지막 결과 스크린샷
     final_step = step + 1
-    take_screenshot(args, final_step)
-    print("Final screenshot saved.")
-    
-
+    # take_screenshot(args, final_step)
+    # print("Final screenshot saved.")
+    for response in all_responses:
+        response["episode_length"] = final_step
+    for response in all_responses:
+        print(response)
+    with open(f"{output_path}/responses.json", "w", encoding="utf-8") as f:
+        json.dump(all_responses, f, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="VLM Mobile Agent")
-    parser.add_argument("--server", type=str, default="http://143.248.158.42:8000/predict", help="Server URL") # loki1: 143.248.158.22 / loki2: 143.248.158.71
+    parser.add_argument("--server", type=str, default="http://143.248.158.188:8000/predict", help="Server URL") # loki1: 143.248.158.22 / loki2: 143.248.158.71
     parser.add_argument("--method", type=str, default="baseline", help="Method to use (pav, baseline)")
     parser.add_argument("--task_number", type=str, required=True, help="Task Number")
     parser.add_argument("--task", type=str, required=True, help="Text task to perform")
-    parser.add_argument("--image_path", type=str, default="./qwen_3B_baseline_screenshots", help="Path to save screenshots")
+    parser.add_argument("--image_path", type=str, default=".", help="Path to save screenshots")
     parser.add_argument("--max_steps", type=int, default=10, help="Max number of steps before termination")
     parser.add_argument("--app_name", type=str, default="google_maps", help="App name for planner prompt")
 
