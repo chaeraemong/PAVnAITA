@@ -29,7 +29,8 @@ class Query(BaseModel):
     image_base64: str
     step: int
     role: str
-    pervious_steps: str
+    previous_steps: str
+    app_name: str
 
 @app.post("/predict")
 def predict(query: Query):
@@ -78,6 +79,7 @@ Task progress (You have done the following operation on the current device): {qu
     message = [msg.model_dump() for msg in message_objs]
     
     text = processor.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+    # print(text)
     inputs = processor(text=[text], images=[screenshot], padding=True, return_tensors="pt").to('cuda')
 
 
