@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.append('/Users/chaeraemong/Desktop/cyoh/MS. 2nd Semester/Samsung_UI')
 
-from dataset.webjudge.methods.webjudge_general_eval import *
+from dataset.webjudge.webjudge_general_eval import *
 from dataset.webjudge.utils import OpenaiEngine, extract_predication
 import json
 import copy
