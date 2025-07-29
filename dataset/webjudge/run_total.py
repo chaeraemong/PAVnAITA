@@ -1,11 +1,11 @@
 import argparse
 import os
-from webjudge.methods.agenttrek_eval import *
-from webjudge.methods.automomous_eval import *
-from webjudge.methods.webjudge_general_eval import *
-from webjudge.methods.webjudge_online_mind2web import *
-from webjudge.methods.webvoyager_eval import *
-from webjudge.utils import OpenaiEngine, extract_predication
+
+import sys
+sys.path.append('/Users/chaeraemong/Desktop/cyoh/MS. 2nd Semester/Samsung_UI')
+
+from dataset.webjudge.methods.webjudge_general_eval import *
+from dataset.webjudge.utils import OpenaiEngine, extract_predication
 import json
 import copy
 import asyncio
@@ -20,8 +20,9 @@ def extract_step(fname):
     
 def auto_eval(args, task_subset, final_predicted_labels, model):
     ################## get the already done task id ###############
-    # output_json_path = os.path.join(args.output_path, f"{args.app_name}_{args.method}_score_threshold_{args.score_threshold}_auto_eval_results.json")
-    output_json_path = os.path.join(args.output_path, f"google_maps__pav__score_threshold_{args.score_threshold}_auto_eval_results.json")
+    output_json_path = os.path.join(args.output_path, f"AITA_{args.dataset_type}_{args.category}_{args.app_name}_autoeval_results(score_threshold_{args.score_threshold}).json")
+    if not os.path.exists(output_json_path):
+        open(output_json_path, "w", encoding="utf-8").close()
     already_ids = []
     if os.path.exists(output_json_path):
         with open(output_json_path,"r") as f:
@@ -29,71 +30,49 @@ def auto_eval(args, task_subset, final_predicted_labels, model):
         already_tasks = already_data.splitlines()
         for item in already_tasks:
             item = json.loads(item)
-            already_ids.append(item["task_id"])
+            if isinstance(item, dict):
+                already_ids.append(item["episode_id"])
+            elif isinstance(item, (list, tuple)) and len(item) > 0:
+                already_ids.append(item[0])
 
     print(f"The number of already done tasks: {len(already_ids)}")
 
     for task_id in task_subset:
-        #Skip already done task
+
+        # Skip already done task
         if task_id in already_ids:
             continue
+        
+        task_folder_name = task_id
+        inst_id = task_folder_name.rsplit("-", 1)[0]
+        input_json_path = os.path.join(args.trajectories_dir, task_folder_name, f"{inst_id}.json")
 
         trajectory_images_path = os.path.join(args.trajectories_dir, task_id)
         screenshot_paths = []
-        thoughts = None
-        action_history = None
-        final_result_response = None
-        input_image_paths = None
+        result_action_type = []
+        result_action_text = []
+        input_image_paths = []
         task_description = None
         output_results = {}
-        # Load results
-        with open(os.path.join(args.trajectories_dir, task_id, 'results.json')) as f:
-            result = json.load(f)
 
-            task_description = result["task"]
-            print("task_description : ", task_description)
-            # if "episode_length" in result:
-            #     episode_length = result["episode_length"]
-            if "action_history" in result:
-                action_history = result["action_history"]
-                print("action_history : ", action_history)
-            if "thoughts" in result:
-                thoughts = result["thoughts"]
-            if "final_result_response" in result:
-                final_result_response = result["final_result_response"]
-                print("final_result_response : ", final_result_response)
-            if "input_image_paths" in result:
-                input_image_paths = result["input_image_paths"]
+        # Load results
+        with open(input_json_path) as f:
+            results = json.load(f)
+        
+        for result in results:
+            task_description = result.get("instruction")
+            result_action_type.append(result.get("result_action_type"))
+            result_action_text.append(result.get("result_action_text"))
+            input_image_paths.append(result.get("image_path"))
 
         print(f"Start evaluation for {task_description}")
-        # Do the auto-eval
-        if args.mode == "Autonomous_eval":
-            for image in sorted(os.listdir(trajectory_images_path), key=lambda x: int(re.findall(r'\d+', x)[0])):
-                    screenshot_paths.append(os.path.join(trajectory_images_path, image))
-            messages, text, system_msg = Autonomous_eval(task_description, action_history, screenshot_paths[-1])
-        
-        elif args.mode == "AgentTrek_eval":
-            for image in sorted(os.listdir(trajectory_images_path), key=lambda x: int(re.findall(r'\d+', x)[0])):
-                    screenshot_paths.append(os.path.join(trajectory_images_path, image))
-            messages, text, system_msg = AgentTrek_eval(task_description, action_history, thoughts, screenshot_paths[-1])
-        
-        elif args.mode == "WebVoyager_eval":
-            for image in sorted(os.listdir(trajectory_images_path), key=lambda x: int(re.findall(r'\d+', x)[0])):
-                screenshot_paths.append(os.path.join(trajectory_images_path, image))
-            messages, text, system_msg = WebVoyager_eval(task_description, screenshot_paths, final_result_response)
-        
-        elif args.mode == "WebJudge_Online_Mind2Web_eval":
-            for image in sorted(os.listdir(trajectory_images_path), key=lambda x: int(re.findall(r'\d+', x)[0])):
-                screenshot_paths.append(os.path.join(trajectory_images_path, image))
-            messages, text, system_msg, record, key_points = asyncio.run(WebJudge_Online_Mind2Web_eval(task_description, action_history, screenshot_paths, model, args.score_threshold))
-            output_results["image_judge_record"] = record
-            output_results["key_points"] = key_points
 
-        elif args.mode == "WebJudge_general_eval":
+        # Do the auto-eval
+        if args.mode == "WebJudge_general_eval":
             files = [f for f in os.listdir(trajectory_images_path) if f.lower().endswith('.png')]
             for image in sorted(files, key=extract_step):   #(os.listdir(trajectory_images_path), key=lambda x: int(re.findall(r'\d+', x)[0])):
                 screenshot_paths.append(os.path.join(trajectory_images_path, image))
-            messages, text, system_msg, record, key_points = asyncio.run(WebJudge_general_eval(task_description, input_image_paths, thoughts, action_history, screenshot_paths, model, args.score_threshold))
+            messages, record, key_points = asyncio.run(WebJudge_general_eval(task_description, input_image_paths, result_action_type, result_action_text, screenshot_paths, model, args.score_threshold))
             output_results["image_judge_record"] = record
             output_results["key_points"] = key_points
 
@@ -104,12 +83,9 @@ def auto_eval(args, task_subset, final_predicted_labels, model):
         predicted_label = extract_predication(response, args.mode)
         print("predicted_label : ", predicted_label)
         
-        #Store evaluation details
-        evaluation_results = {"response": response, "predicted_label": predicted_label}
-        output_results["task_id"] = task_id
-        output_results["input_text"] = text
-        output_results["system_msg"] = system_msg
-        output_results["evaluation_details"] = evaluation_results
+        # Store evaluation details
+        output_results["episode_id"] = task_folder_name
+        output_results["evaluation_details"] = response
         output_results["predicted_label"] = predicted_label
 
         final_predicted_labels.append(predicted_label)
@@ -117,31 +93,32 @@ def auto_eval(args, task_subset, final_predicted_labels, model):
         print(f"Finish evaluation for {task_description}")
         print("="*20)
         os.makedirs(args.output_path, exist_ok=True)
-        # with open(os.path.join(args.output_path, f"{args.mode}_{args.model}_score_threshold_{args.score_threshold}_auto_eval_results.json"), "a+") as f_out:
-        with open(os.path.join(args.output_path, f"google_maps__pav__score_threshold_{args.score_threshold}_auto_eval_results.json"), "a+") as f_out:
+        with open(output_json_path, "a+") as f_out:
             f_out.write(json.dumps(output_results) + "\n")
     
     return final_predicted_labels
 
 def parallel_eval(args):
-    #Evaluate in parallel based on num of works
+    # Evaluate in parallel based on num of works
     task_dirs = [
         d for d in sorted(os.listdir(args.trajectories_dir)) 
         if os.path.isdir(os.path.join(args.trajectories_dir, d))
     ]
     print(f"Evaluating {len(task_dirs)} tasks in total.")
 
-    #Load model
+    # Load model
     model = OpenaiEngine(
         model=args.model,
         api_key=args.api_key
     )
 
+    args.output_path = args.trajectories_dir
+    
     task_set = task_dirs[0:len(task_dirs)]
     final_predicted_labels = []
     final_predicted_labels = auto_eval(args, task_set, final_predicted_labels, model)
 
-    # print("final_predicted_labels : ", final_predicted_labels)
+    print("final_predicted_labels : ", final_predicted_labels)
     success_num = sum(label or 0 for label in final_predicted_labels)
 
     print("Evaluation complete.")
@@ -152,15 +129,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Auto evaluation of web navigation tasks.")
     parser.add_argument('--mode', type=str, default='WebJudge_general_eval', help='the mode of evaluation')
     parser.add_argument('--model', type=str, default='gpt-4o')
-    parser.add_argument("--trajectories_dir", type=str, default='./qwen_3b_screenshots/google_maps', help="Path to trajectories directory")
+    parser.add_argument("--trajectories_dir", type=str, default='./dataset/AITA/train/map', help="Path to trajectories directory")
+    parser.add_argument("--dataset_type", type=str, default='train', help="train or test")
+    parser.add_argument("--category", type=str, default="map", help="Category for application")
     parser.add_argument("--api_key", type=str, default="", help="The api key")
-    parser.add_argument("--output_path", type=str, default='./WebJudge_output', help="The output path")
+    parser.add_argument("--output_path", type=str, default='./dataset/AITA', help="The output path")
     parser.add_argument('--score_threshold', type=int, default=3)
     parser.add_argument('--num_worker', type=int, default=1)
+    parser.add_argument("--app_name", type=str, default="google_maps", help="App name for planner prompt")
     args = parser.parse_args()
 
     parallel_eval(args)
-
-
-
-# CUDA_VISIBLE_DEVICES=1 python WebJudge/src/run.py --trajectories_dir PAV/general --api_key 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 --output_path PAV/WebJudge_output --mode WebJudge_general_eval --model gpt-4o --score_threshold 3 --num_worker 1
