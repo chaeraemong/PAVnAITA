@@ -1,0 +1,70 @@
+[
+  {
+    "episode_id": "1466028412",
+    "episode_length": 4,
+    "step_id": 0,
+    "instruction": "Locate the nearest post office.",
+    "result_action_type": "click",
+    "result_action_text": "",
+    "result_touch_yx": [
+      0.06023102310231023,
+      0.49722222222222223
+    ],
+    "result_lift_yx": [
+      0.06023102310231023,
+      0.49722222222222223
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1466028412-0/screenshot_0.png"
+  },
+  {
+    "episode_id": "1466028412",
+    "episode_length": 4,
+    "step_id": 1,
+    "instruction": "Locate the nearest post office.",
+    "result_action_type": "type",
+    "result_action_text": "nearest post office",
+    "result_touch_yx": [
+      -1,
+      -1
+    ],
+    "result_lift_yx": [
+      -1,
+      -1
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1466028412-0/screenshot_1.png"
+  },
+  {
+    "episode_id": "1466028412",
+    "episode_length": 4,
+    "step_id": 2,
+    "instruction": "Locate the nearest post office.",
+    "result_action_type": "click",
+    "result_action_text": "",
+    "result_touch_yx": [
+      0.12788778877887788,
+      0.39166666666666666
+    ],
+    "result_lift_yx": [
+      0.12788778877887788,
+      0.39166666666666666
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1466028412-0/screenshot_2.png"
+  },
+  {
+    "episode_id": "1466028412",
+    "episode_length": 4,
+    "step_id": 3,
+    "instruction": "Locate the nearest post office.",
+    "result_action_type": "terminate",
+    "result_action_text": "",
+    "result_touch_yx": [
+      -1,
+      -1
+    ],
+    "result_lift_yx": [
+      -1,
+      -1
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1466028412-0/screenshot_3.png"
+  }
+]

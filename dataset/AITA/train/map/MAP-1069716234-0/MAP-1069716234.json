@@ -1,0 +1,87 @@
+[
+  {
+    "episode_id": "1069716234",
+    "episode_length": 5,
+    "step_id": 0,
+    "instruction": "Search for a nearby hotel.",
+    "result_action_type": "click",
+    "result_action_text": "",
+    "result_touch_yx": [
+      0.06641914191419142,
+      0.49722222222222223
+    ],
+    "result_lift_yx": [
+      0.06641914191419142,
+      0.49722222222222223
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1069716234-0/screenshot_0.png"
+  },
+  {
+    "episode_id": "1069716234",
+    "episode_length": 5,
+    "step_id": 1,
+    "instruction": "Search for a nearby hotel.",
+    "result_action_type": "type",
+    "result_action_text": "hotel",
+    "result_touch_yx": [
+      -1,
+      -1
+    ],
+    "result_lift_yx": [
+      -1,
+      -1
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1069716234-0/screenshot_1.png"
+  },
+  {
+    "episode_id": "1069716234",
+    "episode_length": 5,
+    "step_id": 2,
+    "instruction": "Search for a nearby hotel.",
+    "result_action_type": "click",
+    "result_action_text": "",
+    "result_touch_yx": [
+      0.8564356435643564,
+      0.7037037037037037
+    ],
+    "result_lift_yx": [
+      0.8564356435643564,
+      0.7037037037037037
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1069716234-0/screenshot_2.png"
+  },
+  {
+    "episode_id": "1069716234",
+    "episode_length": 5,
+    "step_id": 3,
+    "instruction": "Search for a nearby hotel.",
+    "result_action_type": "click",
+    "result_action_text": "",
+    "result_touch_yx": [
+      0.183993399339934,
+      0.5203703703703704
+    ],
+    "result_lift_yx": [
+      0.183993399339934,
+      0.5203703703703704
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1069716234-0/screenshot_3.png"
+  },
+  {
+    "episode_id": "1069716234",
+    "episode_length": 5,
+    "step_id": 4,
+    "instruction": "Search for a nearby hotel.",
+    "result_action_type": "terminate",
+    "result_action_text": "",
+    "result_touch_yx": [
+      -1,
+      -1
+    ],
+    "result_lift_yx": [
+      -1,
+      -1
+    ],
+    "image_path": "./dataset/AITA/train/map/MAP-1069716234-0/screenshot_4.png"
+  }
+]
