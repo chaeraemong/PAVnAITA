@@ -59,7 +59,6 @@ def call_model(macro_action, task_json, json_file_path, model="gpt-5-nano"):
     try:
         return json.loads(raw_text)
     except Exception:
-        # 실패 시 안전한 fallback
         return {"single_instruction": macro_action, "task_id": None, "screenshot_idx": -1}
 
 def process_dataset(dataset_root, macro_action="Add to cart"):
